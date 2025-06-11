@@ -61,7 +61,14 @@ def register_user():
     # Insert into MongoDB
     result = mongo.db.users.insert_one(user_document)
 
-    return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}), 201
+    # Remove password before returning the response
+    user_document["_id"] = str(result.inserted_id)
+    user_document.pop("password")
+
+    return jsonify({
+        "message": "User registered successfully",
+        "user": user_document
+    }), 201
 
 
 
