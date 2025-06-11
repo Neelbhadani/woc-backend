@@ -62,6 +62,6 @@ def register_user():
     result = mongo.db.users.insert_one(user_document)
 
     return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}), 201
-
-
+def login():
+    return 1
 
