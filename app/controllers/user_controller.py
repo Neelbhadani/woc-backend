@@ -21,10 +21,6 @@ def get_users(user_id=None):
             user_list.append(user)
         return jsonify(user_list)
 
-
-
-
-
 def register_user():
     data = request.get_json()
 
@@ -65,7 +61,8 @@ def register_user():
     # Insert into MongoDB
     result = mongo.db.users.insert_one(user_document)
 
-    return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}), 201
+    return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}),
+
 def user_login():
     data = request.get_json()
     required_fields = ["email", "password"]
@@ -89,12 +86,3 @@ def user_login():
         "email": user["email"],
         "user_name": user["user_name"]
     }), 200
-    # Prepare response
-    user_data = user.to_dict()
-    user_data["_id"] = str(result.inserted_id)
-    user_data.pop("password")
-
-    return jsonify({
-        "message": "User registered successfully",
-        "user": user_data
-    }), 201
