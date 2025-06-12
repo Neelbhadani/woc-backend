@@ -23,25 +23,22 @@ def get_users(user_id=None):
 def register_user():
     data = request.get_json()
 
-    required_fields = ["first_name", "last_name", "email", "password", "phone_number", "user_name"]
-    if not all(data.get(field) for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+    try:
+        user = UserModel(data)
+        user.validate()
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
-    # Check for existing email or username
-    if mongo.db.users.find_one({"email": data["email"]}):
+    # Duplicate checks
+    if mongo.db.users.find_one({"email": user.email}):
         return jsonify({"error": "Email already exists"}), 400
 
-    if mongo.db.users.find_one({"user_name": data["user_name"]}):
+    if mongo.db.users.find_one({"user_name": user.user_name}):
         return jsonify({"error": "Username already taken"}), 400
 
-    # Create user model and hash password
-    user = UserModel(data)
     user.hash_password()
-
-    # Insert into DB
     result = mongo.db.users.insert_one(user.to_dict())
 
-    # Prepare response
     user_data = user.to_dict()
     user_data["_id"] = str(result.inserted_id)
     user_data.pop("password")
