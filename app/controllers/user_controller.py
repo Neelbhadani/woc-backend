@@ -62,6 +62,25 @@ def register_user():
     result = mongo.db.users.insert_one(user_document)
 
     return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}), 201
-def login():
-    return 1
+def user_login():
+    data = request.get_json()
+    required_fields = ["email", "password"]
+    if not all(data.get(field) for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    user = mongo.db.users.find_one({"email": data["email"]})
+    if not user:
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    if not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user_id": str(user["_id"]),
+        "first_name": user["first_name"],
+        "last_name": user["last_name"],
+        "email": user["email"],
+        "user_name": user["user_name"]
+    }), 200
 
