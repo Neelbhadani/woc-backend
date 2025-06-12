@@ -60,8 +60,6 @@ def user_login():
     user = mongo.db.users.find_one({"email": data["email"]})
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
-    # Insert into DB
-    result = mongo.db.users.insert_one(user.to_dict())
 
     if not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
         return jsonify({"error": "Invalid email or password"}), 401
