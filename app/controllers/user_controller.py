@@ -1,4 +1,5 @@
-from flask import jsonify,request
+import jwt
+from flask import jsonify, request, current_app
 from bson import ObjectId
 from app.extensions import mongo
 from app.models.User import UserModel
@@ -73,7 +74,12 @@ def user_login():
 
         if not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
             return jsonify({"error": "Invalid email or password"}), 401
-
+        payload = {
+            "user_id": str(user["_id"]),
+            "email": user["email"],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # expires in 1 hour
+        }
+        token = jwt.encode(payload, current_app.config['SECRET_KEY']	, algorithm="HS256")
         return jsonify({
             "message": "Login successful",
             "user_id": str(user["_id"]),
