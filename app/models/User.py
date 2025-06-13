@@ -1,6 +1,5 @@
 from datetime import datetime
 import bcrypt
-from bson.objectid import ObjectId
 
 
 class UserModel:
@@ -32,7 +31,6 @@ class UserModel:
 
     def validate(self):
         errors = []
-
         for field, error_msg in self.required_fields.items():
             value = self.data.get(field)
             if value is None or (isinstance(value, str) and not value.strip()):
@@ -61,3 +59,8 @@ class UserModel:
             "deleted_at": self.deleted_at,
             "user_name": self.user_name
         }
+
+    def to_public_dict(self):
+        data = self.to_dict()
+        data.pop("password", None)
+        return data

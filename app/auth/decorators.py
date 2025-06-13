@@ -1,34 +1,38 @@
 from functools import wraps
 from flask import request, jsonify, current_app
-from bson.objectid import ObjectId
 import jwt
-from app.extensions import mongo  # make sure this is how you access mongo
-
+from bson import ObjectId
+from app.extensions import mongo
 
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
 
-        # Get token from Authorization header
+        # Get token from header
         if 'Authorization' in request.headers:
-            parts = request.headers['Authorization'].split(" ")
-            if len(parts) == 2 and parts[0] == "Bearer":
-                token = parts[1]
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
 
         if not token:
-            return jsonify({"error": "Token is missing"}), 401
+            return jsonify({"error": "Token is missing!"}), 401
 
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = mongo.db.users.find_one({"_id": ObjectId(data["user_id"])})
+            user_id = data['u']
+            current_user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+
             if not current_user:
                 return jsonify({"error": "User not found"}), 401
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token expired"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid token"}), 401
 
-        return f(current_user, *args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired!"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token!"}), 401
+        except Exception as e:
+            return jsonify({"error": "Token validation failed", "details": str(e)}), 500
+
+        return f(current_user, *args, **kwargs)  # Pass current_user to the wrapped function
 
     return decorated
