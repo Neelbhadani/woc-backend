@@ -7,6 +7,7 @@ from pymongo.errors import PyMongoError
 from datetime import datetime
 import bcrypt
 
+
 def get_users(user_id=None):
     if user_id:
         user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
@@ -22,6 +23,7 @@ def get_users(user_id=None):
             user['_id'] = str(user['_id'])
             user_list.append(user)
         return jsonify(user_list)
+
 
 def register_user():
     try:
@@ -61,6 +63,8 @@ def register_user():
     except Exception as e:
         # Catch all other unexpected errors
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+
 def user_login():
     try:
         data = request.get_json()
@@ -79,7 +83,7 @@ def user_login():
             "email": user["email"],
             "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # expires in 1 hour
         }
-        token = jwt.encode(payload, current_app.config['SECRET_KEY']	, algorithm="HS256")
+        token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm="HS256")
         return jsonify({
             "message": "Login successful",
             "user_id": str(user["_id"]),

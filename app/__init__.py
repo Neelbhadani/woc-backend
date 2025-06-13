@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from app.extensions import mongo
 
+
 def create_app():
     app = Flask(__name__)
     app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/woc")
