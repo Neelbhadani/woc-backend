@@ -1,8 +1,9 @@
 from flask import Blueprint
-from app.controllers.user_controller import get_users, register_user,user_login
+from app.controllers.user_controller import get_users, register_user, user_login
 from app.auth.decorators import token_required
 
 user_bp = Blueprint("user_bp", __name__)
+
 
 # Route to get all users or a specific user
 @user_bp.route("/users", methods=["GET"])
@@ -11,9 +12,12 @@ user_bp = Blueprint("user_bp", __name__)
 def users(user_id=None):
     return get_users(user_id)
 
+
 @user_bp.route('/register', methods=['POST'])
 def register():
     return register_user()
+
+
 @user_bp.route('/login', methods=['POST'])
 def login():
     return user_login()

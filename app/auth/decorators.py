@@ -4,6 +4,7 @@ from bson.objectid import ObjectId
 import jwt
 from app.extensions import mongo  # make sure this is how you access mongo
 
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -29,4 +30,5 @@ def token_required(f):
             return jsonify({"error": "Invalid token"}), 401
 
         return f(current_user, *args, **kwargs)
+
     return decorated
