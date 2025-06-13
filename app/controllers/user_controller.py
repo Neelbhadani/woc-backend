@@ -1,6 +1,8 @@
 from flask import jsonify,request
 from bson import ObjectId
 from app.extensions import mongo
+from app.models.User import UserModel
+from pymongo.errors import PyMongoError
 from datetime import datetime
 import bcrypt
 
@@ -20,67 +22,41 @@ def get_users(user_id=None):
             user_list.append(user)
         return jsonify(user_list)
 
-
-
-
-
 def register_user():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    required_fields = ["first_name", "last_name", "email", "password", "phone_number", "user_name"]
-    if not all(data.get(field) for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+        required_fields = ["first_name", "last_name", "email", "password", "phone_number", "user_name"]
+        if not all(data.get(field) for field in required_fields):
+            return jsonify({"error": "Missing required fields"}), 400
 
-    # Check if user already exists
-    if mongo.db.users.find_one({"email": data["email"]}):
-        return jsonify({"error": "Email already exists"}), 400
+        # Check for existing email or username
+        if mongo.db.users.find_one({"email": data["email"]}):
+            return jsonify({"error": "Email already exists"}), 400
 
-    if mongo.db.users.find_one({"user_name": data["user_name"]}):
-        return jsonify({"error": "Username already taken"}), 400
+        if mongo.db.users.find_one({"user_name": data["user_name"]}):
+            return jsonify({"error": "Username already taken"}), 400
 
-    # Hash the password
-    hashed_password = bcrypt.hashpw(data["password"].encode("utf-8"), bcrypt.gensalt())
+        # Create user model and hash password
+        user = UserModel(data)
+        user.hash_password()
 
-    # Create the user document
-    user_document = {
-        "first_name": data["first_name"],
-        "last_name": data["last_name"],
-        "email": data["email"],
-        "password": hashed_password.decode("utf-8"),
-        "email_verified": False,
-        "email_verified_at": None,
-        "is_active": True,
-        "phone_number": data["phone_number"],
-        "is_phone_number_verified": False,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
-        "deleted_at": None,
-        "user_name": data["user_name"]
-    }
+        # Insert into DB
+        result = mongo.db.users.insert_one(user.to_dict())
 
-    # Insert into MongoDB
-    result = mongo.db.users.insert_one(user_document)
+        # Prepare response
+        user_data = user.to_dict()
+        user_data["_id"] = str(result.inserted_id)
+        user_data.pop("password")
 
-    return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}), 201
-def user_login():
-    data = request.get_json()
-    required_fields = ["email", "password"]
-    if not all(data.get(field) for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({
+            "message": "User registered successfully",
+            "user": user_data
+        }), 201
+    except PyMongoError as e:
+        # Catch MongoDB-related errors
+        return jsonify({"error": "Database error", "details": str(e)}), 500
 
-    user = mongo.db.users.find_one({"email": data["email"]})
-    if not user:
-        return jsonify({"error": "Invalid email or password"}), 401
-
-    if not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
-        return jsonify({"error": "Invalid email or password"}), 401
-
-    return jsonify({
-        "message": "Login successful",
-        "user_id": str(user["_id"]),
-        "first_name": user["first_name"],
-        "last_name": user["last_name"],
-        "email": user["email"],
-        "user_name": user["user_name"]
-    }), 200
-
+    except Exception as e:
+        # Catch all other unexpected errors
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
