@@ -63,24 +63,29 @@ def register_user():
 
     return jsonify({"message": "User registered successfully", "user_id": str(result.inserted_id)}), 201
 def user_login():
-    data = request.get_json()
-    required_fields = ["email", "password"]
-    if not all(data.get(field) for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+    try:
+        data = request.get_json()
+        required_fields = ["email", "password"]
+        if not all(data.get(field) for field in required_fields):
+            return jsonify({"error": "Missing required fields"}), 400
 
-    user = mongo.db.users.find_one({"email": data["email"]})
-    if not user:
-        return jsonify({"error": "Invalid email or password"}), 401
+        user = mongo.db.users.find_one({"email": data["email"]})
+        if not user:
+            return jsonify({"error": "Invalid email or password"}), 401
 
-    if not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
-        return jsonify({"error": "Invalid email or password"}), 401
+        if not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
+            return jsonify({"error": "Invalid email or password"}), 401
 
-    return jsonify({
-        "message": "Login successful",
-        "user_id": str(user["_id"]),
-        "first_name": user["first_name"],
-        "last_name": user["last_name"],
-        "email": user["email"],
-        "user_name": user["user_name"]
-    }), 200
+        return jsonify({
+            "message": "Login successful",
+            "user_id": str(user["_id"]),
+            "first_name": user["first_name"],
+            "last_name": user["last_name"],
+            "email": user["email"],
+            "user_name": user["user_name"]
+        }), 200
+    except PyMongoError as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 500
 
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
