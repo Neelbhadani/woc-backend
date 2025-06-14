@@ -5,10 +5,12 @@ from app.utils.token_utils import generate_verification_token
 from app.services.ai_email_generator import generate_email
 from datetime import datetime
 
+
 def send_email(subject, recipients, html):
     msg = Message(subject=subject, recipients=recipients)
     msg.html = html
     mail.send(msg)
+
 
 def send_verification_email(user):
     token = generate_verification_token(user["email"])
@@ -17,11 +19,13 @@ def send_verification_email(user):
     send_email("Verify your email", [user["email"]], html)
     log_email("verification", user, html)
 
+
 def send_ai_welcome_email(user):
     prompt = f"Write a short welcome email to {user['first_name']} who just signed up."
     html = generate_email(prompt)
     send_email("Welcome to our platform!", [user["email"]], html)
     log_email("welcome", user, html)
+
 
 def log_email(email_type, user, body):
     mongo.db.email_logs.insert_one({
