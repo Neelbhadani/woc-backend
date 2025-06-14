@@ -7,6 +7,8 @@ from pymongo.errors import PyMongoError
 from datetime import datetime
 import bcrypt
 
+from app.services.email_service import send_verification_email, send_ai_welcome_email
+
 
 def get_users(user_id=None):
     if user_id:
@@ -50,6 +52,8 @@ def register_user():
         # Prepare response
         user_data = user.to_dict()
         user_data["_id"] = str(result.inserted_id)
+        send_verification_email(user)
+        send_ai_welcome_email(user)
         user_data.pop("password")
 
         return jsonify({
