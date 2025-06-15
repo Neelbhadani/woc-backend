@@ -6,7 +6,7 @@ from app.extensions import mongo, mail
 def create_app():
     app = Flask(__name__)
     app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/woc")
-
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
     mongo.init_app(app)
     mail.init_app(app)
 
