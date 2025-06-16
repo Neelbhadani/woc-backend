@@ -9,6 +9,7 @@ import bcrypt
 
 from app.services.email_service import send_verification_email, send_ai_welcome_email
 
+
 def get_users(user_id=None):
     if user_id:
         user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
@@ -24,6 +25,7 @@ def get_users(user_id=None):
             user['_id'] = str(user['_id'])
             user_list.append(user)
         return jsonify(user_list)
+
 
 def register_user():
     try:
@@ -46,8 +48,8 @@ def register_user():
         user_data["_id"] = str(result.inserted_id)
 
         # Pass user_data (dict) instead of UserModel
-        #send_verification_email(user_data)
-        #send_ai_welcome_email(user_data)
+        # send_verification_email(user_data)
+        # send_ai_welcome_email(user_data)
 
         user_data.pop("password", None)
 
@@ -62,6 +64,7 @@ def register_user():
         return jsonify({"error": "Database error", "details": str(e)}), 500
     except Exception as e:
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
 
 def user_login():
     try:
@@ -101,3 +104,24 @@ def user_login():
         import traceback
         traceback.print_exc()
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+
+def logout_user(current_user):
+    try:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Authorization header missing or invalid"}), 400
+
+        token = auth_header.split(" ")[1]
+
+        # Blacklist the token
+        mongo.db.blacklisted_tokens.insert_one({
+            "token": token,
+            "user_id": current_user["_id"],
+            "blacklisted_at": datetime.utcnow()
+        })
+
+        return jsonify({"message": "Successfully logged out"}), 200
+
+    except Exception as e:
+        return jsonify({"error": "Logout failed", "details": str(e)}), 500
