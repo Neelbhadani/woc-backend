@@ -4,12 +4,14 @@ import jwt
 from bson import ObjectId
 from app.extensions import mongo
 
+# Add this line at the top
+from app.extensions import mongo  # already imported
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
 
-        # Get token from header
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
             if auth_header.startswith("Bearer "):
@@ -19,6 +21,10 @@ def token_required(f):
             return jsonify({"error": "Token is missing!"}), 401
 
         try:
+            # ❗ Check if token is blacklisted
+            if mongo.db.blacklisted_tokens.find_one({"token": token}):
+                return jsonify({"error": "Token has been revoked"}), 401
+
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
             user_id = data['u']
             current_user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
@@ -33,6 +39,6 @@ def token_required(f):
         except Exception as e:
             return jsonify({"error": "Token validation failed", "details": str(e)}), 500
 
-        return f(current_user, *args, **kwargs)  # Pass current_user to the wrapped function
+        return f(current_user, *args, **kwargs)
 
     return decorated
