@@ -39,13 +39,17 @@ def register_user():
         user.validate()
         user.hash_password()
 
-        result = mongo.db.users.insert_one(user.to_dict())
+        user_dict = user.to_dict()
+        result = mongo.db.users.insert_one(user_dict)
+
         user_data = user.to_public_dict()
         user_data["_id"] = str(result.inserted_id)
-        send_verification_email(user)
-        send_ai_welcome_email(user)
-        user_data.pop("password")
 
+        # Pass user_data (dict) instead of UserModel
+        #send_verification_email(user_data)
+        #send_ai_welcome_email(user_data)
+
+        user_data.pop("password", None)
 
         return jsonify({
             "message": "User registered successfully",

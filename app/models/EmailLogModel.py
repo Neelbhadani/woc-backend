@@ -1,7 +1,6 @@
 from datetime import datetime
 from bson import ObjectId
 
-
 class EmailLogModel:
     def __init__(self, email_type, user_id, email, subject, body, status="sent", retry_count=0, sent_at=None):
         self.email_type = email_type  # e.g., "verification", "welcome"
