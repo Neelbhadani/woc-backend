@@ -64,3 +64,4 @@ class UserModel:
         data = self.to_dict()
         data.pop("password", None)
         return data
+
